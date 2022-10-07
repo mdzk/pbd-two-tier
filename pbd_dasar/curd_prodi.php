@@ -1,9 +1,15 @@
 <?php
 require("../sistem/koneksi.php");
 
-$user[] = [
-    ['username' => 'admin', 'password' => '21232f297a57a5a743894a0e4a801fc3'],
-    ['username' => 'user', 'password' => 'ee11cbb19052e40b07aac0ca060c23ee']
+$users = [
+    [
+        "username" => "admin", 
+        "password" => "21232f297a57a5a743894a0e4a801fc3"
+    ],
+    [
+        "username" => "user", 
+        "password" => "ee11cbb19052e40b07aac0ca060c23ee"
+    ]
 ];
 
 $hub = open_connection();
@@ -200,23 +206,19 @@ mysqli_close($hub);
 
 <?php
     function login() {
-        $row = array(
-            "kdprodi" => "",
-            "nmprodi" => "",
-            "akreditasi" => "-"
-        ); ?>
+        
+        ?>
 
         <div class="container">
             <div class="box">
                 <h2>Login</h2>
                 <form class="form-control" name="latihan" action="curd_prodi.php?a=list" method="post" onsubmit="return validate()">
                     Username <br>
-                    <input type="text" placeholder="Masukkan username" name="kdprodi" maxlength="6" size="6" value="<?php echo trim($row["kdprodi"]) ?>" />
+                    <input type="text" placeholder="Masukkan username" name="username" />
                     <br>
                     Password <br>
-                    <input type="text" placeholder="Masukkan password" name="nmprodi" maxlength="70" size="70" value="<?php echo trim($row["nmprodi"]) ?>" />
+                    <input type="text" placeholder="Masukkan password" name="password" />
                     <br>
-
                     <input class="btn save" type="submit" name="action" value="Login">
                 </form>
 
@@ -227,8 +229,10 @@ mysqli_close($hub);
     <?php
     function read_data() {
         global $hub;
+        global $users;
         $query = "select * from dt_prodi";
-        $result = mysqli_query($hub, $query); ?>
+        $result = mysqli_query($hub, $query); 
+        ?>
         
         <div class="container">
             <div class="box">
