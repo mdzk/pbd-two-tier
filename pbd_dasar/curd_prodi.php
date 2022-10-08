@@ -1,12 +1,16 @@
 <?php
 require("../sistem/koneksi.php");
-
+session_start();
 $users = [
     [
+        "name" => "Vincent Immanuel",
+        "role" => "admin",
         "username" => "admin", 
         "password" => "21232f297a57a5a743894a0e4a801fc3"
     ],
     [
+        "name" => "Veren Miracle",
+        "role" => "user",
         "username" => "user", 
         "password" => "ee11cbb19052e40b07aac0ca060c23ee"
     ]
@@ -39,6 +43,9 @@ switch ($a) {
         break;
     case "hapus":
         hapus_data($id);
+        break;
+    case "logout":
+        logout();
         break;
     default:
         login();
@@ -139,9 +146,11 @@ mysqli_close($hub);
         }
 
         .danger {
-            background-color: #105157;
+            background-color: #fc544b;
             font-weight: 700;
             cursor: pointer;
+            margin-left: 10px;
+            margin-bottom: 15px;
         }
 
         .small {
@@ -191,7 +200,7 @@ mysqli_close($hub);
             font-weight: 500;
         }
 
-        .form-control > input[type=text] {
+        .form-control > input[type=text], .form-control > input[type=password] {
             padding: 10px 15px;
             font-family: 'Nunito', sans-serif;
             width: 100%;
@@ -212,41 +221,61 @@ mysqli_close($hub);
         <div class="container">
             <div class="box">
                 <h2>Login</h2>
-                <form class="form-control" name="latihan" action="curd_prodi.php?a=list" method="post" onsubmit="return validate()">
+                <form class="form-control" name="latihan" method="post" onsubmit="return validate()">
                     Username <br>
                     <input type="text" placeholder="Masukkan username" name="username" />
                     <br>
                     Password <br>
-                    <input type="text" placeholder="Masukkan password" name="password" />
+                    <input type="password" placeholder="Masukkan password" name="password" />
                     <br>
                     <input class="btn save" type="submit" name="action" value="Login">
                 </form>
 
             </div>
         </div>
-    <?php } ?>
+    <?php 
+        global $users;
+        if (isset($_POST['action'])) {
+            $username = $_POST['username'];
+            $password = md5($_POST['password']);
+
+            $user = $users[array_search($username, array_column($users, 'username'))];
+            if ($user['password'] == $password && $user['username'] == $username) {
+                $_SESSION['user'] = $user;
+                echo '<meta http-equiv="refresh" content="0;?a=list">';
+            }else {
+                echo ' <script> alert("Username/Password salah") </script>';
+            }
+        }
+    } ?>
     
     <?php
     function read_data() {
+        if (!isset($_SESSION['user'])) {
+            header('location:?a=');
+        }
+
         global $hub;
-        global $users;
         $query = "select * from dt_prodi";
         $result = mysqli_query($hub, $query); 
+
         ?>
         
         <div class="container">
             <div class="box">
-                <h2>Data Program Studi </h2><a href="?a=input" class="btn small">add prodi</a>
+                <h2>Selamat datang, <?= $_SESSION['user']['name']; ?></h2><?php if($_SESSION['user']['role'] !== 'user') { ?><a href="?a=input" class="btn small" onclick="">add prodi</a><?php } ?><a href="?a=logout" class="btn danger">Logout</a>
                 <div class="contents">
                     <?php while($row = mysqli_fetch_array($result)) { ?>
                     
                     <div class="card" style="background-color: #<?php if($row['akreditasi'] == 'A') {echo '33BC84';} else if($row['akreditasi'] == 'B') {echo 'FEB12F';} else if($row['akreditasi'] == 'C') {echo 'DE7588';} else {echo '105157';} ?>;">
                         <p class="grade"><?php echo $row['akreditasi']; ?></p>
                         <h3><span class="kdprodi"><?php echo $row['kdprodi']; ?> </span><?php echo $row['nmprodi']; ?></h3>
+                        <?php if($_SESSION['user']['role'] !== 'user') { ?>
                         <div class="button">
                             <a class="btn edit" href="curd_prodi.php?a=edit&id=<?php echo $row['idprodi']; ?>">Edit</a>
                             <a class="btn hapus" href="curd_prodi.php?a=hapus&id=<?php echo $row['idprodi']; ?>">Hapus</a>
                         </div>
+                        <?php } ?>
                         <div class="clear"></div>
                     </div>
                     <?php } ?>
@@ -258,6 +287,7 @@ mysqli_close($hub);
 
     <?php
     function input_data() {
+        admin_only();
         $row = array(
             "kdprodi" => "",
             "nmprodi" => "",
@@ -266,7 +296,6 @@ mysqli_close($hub);
 
         <div class="container">
             <div class="box">
-        
                 <h2>Input Data Program Studi</h2>
                 <form class="form-control" name="latihan" action="curd_prodi.php?a=list" method="post" onsubmit="return validate()">
                     <input type="hidden" name="sql" value="create">
@@ -292,6 +321,11 @@ mysqli_close($hub);
 
     <?php 
     function edit_data($id) {
+        admin_only();
+        if ($_SESSION['user']['role'] !== 'admin') {
+            echo '<script> alert("permission denied") </script>';
+            header('location:?a=list');
+        }
         global $hub;
         $query  = "select * from dt_prodi where idprodi = $id";
         $result = mysqli_query($hub, $query);
@@ -324,6 +358,7 @@ mysqli_close($hub);
 
     <?php
     function hapus_data($id) {
+        admin_only();
         global $hub;
         $query  = "select * from dt_prodi where idprodi = $id";
         $result = mysqli_query($hub, $query);
@@ -359,6 +394,7 @@ mysqli_close($hub);
 
     <?php
     function create_prodi() {
+        admin_only();
         global $hub;
         global $_POST;
         $kdprodi = $_POST['kdprodi'];
@@ -375,6 +411,7 @@ mysqli_close($hub);
     }
 
     function update_prodi() {
+        admin_only();
         global $hub;
         global $_POST;
 
@@ -411,11 +448,26 @@ mysqli_close($hub);
     }
 
     function delete_prodi() {
+        admin_only();
         global $hub;
         global $_POST;
         $query  = "DELETE FROM dt_prodi";
         $query .= " WHERE idprodi = ".$_POST["idprodi"];
         mysqli_query($hub, $query) or die (mysqli_error($hub));
+    }
+
+    function logout()
+    {
+        session_destroy();
+        session_unset();
+        header('Location:?a=');
+    }
+
+    function admin_only() {
+        if ($_SESSION['user']['role'] !== 'admin') {
+            echo '<script> alert("permission denied") </script>';
+            header('location:?a=list');
+        }
     }
     ?>
 
